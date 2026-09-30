@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>VIRA · Admin Console</title>
+<style>
+  :root {
+    --bg: #0B1220;
+    --surface: #131C30;
+    --surface-2: #1B2640;
+    --border: #28335A;
+    --text: #EDF1F7;
+    --text-muted: #8C99B8;
+    --accent: #FF4D6D;
+    --accent-soft: rgba(255, 77, 109, 0.14);
+    --safe: #2DD4BF;
+    --safe-soft: rgba(45, 212, 191, 0.14);
+    --radius: 12px;
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 15px;
+    line-height: 1.5;
+  }
+
+  /* ── Login screen ──────────────────────────────────────────── */
+  .auth-screen {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .auth-card {
+    width: 100%;
+    max-width: 360px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .auth-brand { margin-bottom: 8px; }
+  .brand-mark {
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+  }
+  .brand-sub {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    letter-spacing: 0.04em;
+    margin-top: 2px;
+  }
+  label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+  input, select {
+    background: #0F1830;
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 0.95rem;
+    font-family: inherit;
+  }
+  input:focus-visible, select:focus-visible, button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  button {
+    cursor: pointer;
+    border: none;
+    border-radius: 8px;
+    font-family: inherit;
+    font-weight: 600;
+  }
+  .auth-card button[type="submit"] {
+    background: var(--accent);
+    color: #1A0408;
+    padding: 11px;
+    font-size: 0.95rem;
+    margin-top: 4px;
+  }
+  .auth-error {
+    color: var(--accent);
+    font-size: 0.85rem;
+    margin: 0;
+  }
+
+  /* ── Shell / topbar ─────────────────────────────────────────── */
+  .shell { min-height: 100vh; }
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .topbar .brand { display: flex; align-items: baseline; gap: 10px; }
+  .topbar-right { display: flex; align-items: center; gap: 16px; }
+  .updated, .user-pill { font-size: 0.8rem; color: var(--text-muted); }
+  .btn-ghost {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 7px 14px;
+    font-size: 0.85rem;
+    border-radius: 8px;
+  }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  /* ── Stat cards ─────────────────────────────────────────────── */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .stat-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .stat-value {
+    font-size: 2.25rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+  }
+  .stat-card--live.is-live {
+    border-color: var(--accent);
+    background: linear-gradient(180deg, var(--accent-soft), var(--surface));
+  }
+  .stat-card--live.is-live .stat-value { color: var(--accent); }
+
+  /* ── Pulse (signature element) ─────────────────────────────────
+     A radar-style pulse marks live emergencies — on the "Active
+     Emergencies" stat card and on "Live" badges in the alerts table. */
+  .pulse-dot {
+    position: relative;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    flex-shrink: 0;
+  }
+  .pulse-dot::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: pulse-ring 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  .pulse-dot--sm { width: 6px; height: 6px; }
+  @keyframes pulse-ring {
+    0%   { transform: scale(1);   opacity: 0.7; }
+    70%, 100% { transform: scale(2.6); opacity: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .pulse-dot::after { animation: none; }
+  }
+  .stat-card--live:not(.is-live) .pulse-dot { background: var(--text-muted); }
+  .stat-card--live:not(.is-live) .pulse-dot::after { display: none; }
+
+  /* ── Panels / tables ────────────────────────────────────────── */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .panel-header h2 { margin: 0; font-size: 1rem; font-weight: 700; }
+  .panel-controls { display: flex; align-items: center; gap: 12px; }
+
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  th, td {
+    text-align: left;
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  th {
+    background: var(--surface-2);
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+  }
+  tbody tr:hover { background: var(--surface-2); }
+  tbody tr:last-child td { border-bottom: none; }
+  td.empty { text-align: center; color: var(--text-muted); padding: 32px 20px; white-space: normal; }
+  td a { color: var(--safe); }
+
+  /* ── Badges ─────────────────────────────────────────────────── */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .badge-active { background: var(--accent-soft); color: var(--accent); }
+  .badge-resolved { background: var(--safe-soft); color: var(--safe); }
+  .badge-admin { background: rgba(255,255,255,0.08); color: var(--text-muted); }
+
+  /* ── Pagination ─────────────────────────────────────────────── */
+  .pagination { display: flex; align-items: center; gap: 12px; }
+  .pagination button {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    border-radius: 6px;
+  }
+  .pagination button:disabled { opacity: 0.4; cursor: not-allowed; }
+  .pagination button:not(:disabled):hover { border-color: var(--accent); }
+  .page-label { font-size: 0.8rem; color: var(--text-muted); white-space: nowrap; }
+
+  #alertStatusFilter { padding: 6px 10px; font-size: 0.8rem; }
+
+  @media (max-width: 640px) {
+    main { padding: 16px; gap: 16px; }
+    .topbar { padding: 12px 16px; }
+    .panel-header { flex-direction: column; align-items: flex-start; }
+  }
+
+  /* Force-hide whichever screen carries [hidden]. Belt-and-braces:
+     some browser/extension setups don't apply the default
+     `[hidden] { display: none }` UA rule reliably, which let the
+     login card and dashboard render stacked on top of each other. */
+  .auth-screen[hidden],
+  .shell[hidden] {
+    display: none !important;
+  }
+</style>
+</head>
+<body>
+
+  <!-- ── Login screen ──────────────────────────────────────────── -->
+  <div class="auth-screen" id="loginView">
+    <form class="auth-card" id="loginForm">
+      <div class="auth-brand">
+        <span class="brand-mark">VIRA</span>
+        <span class="brand-sub">Admin Console</span>
+      </div>
+      <label>
+        Email
+        <input type="email" id="loginEmail" autocomplete="username" required />
+      </label>
+      <label>
+        Password
+        <input type="password" id="loginPassword" autocomplete="current-password" required />
+      </label>
+      <button type="submit">Sign in</button>
+      <p class="auth-error" id="loginError" hidden></p>
+    </form>
+  </div>
+
+  <!-- ── Dashboard ─────────────────────────────────────────────── -->
+  <div class="shell" id="dashboardView" hidden>
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark">VIRA</span>
+        <span class="brand-sub">Admin Console</span>
+      </div>
+      <div class="topbar-right">
+        <span class="updated" id="lastUpdated"></span>
+        <span class="user-pill" id="adminName"></span>
+        <button class="btn-ghost" id="logoutBtn" type="button">Sign out</button>
+      </div>
+    </header>
+
+    <main>
+      <!-- Stat cards -->
+      <section class="stats-grid">
+        <div class="stat-card">
+          <span class="stat-label">Total Users</span>
+          <span class="stat-value" id="statTotalUsers">—</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Total Alerts</span>
+          <span class="stat-value" id="statTotalAlerts">—</span>
+        </div>
+        <div class="stat-card stat-card--live" id="activeCard">
+          <span class="stat-label"><span class="pulse-dot"></span> Active Emergencies</span>
+          <span class="stat-value" id="statActive">—</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Resolved Emergencies</span>
+          <span class="stat-value" id="statResolved">—</span>
+        </div>
+      </section>
+
+      <!-- Users table -->
+      <section class="panel" id="usersPanel">
+        <div class="panel-header">
+          <h2>Users</h2>
+          <div class="pagination" id="usersPagination"></div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Joined</th>
+                <th>Role</th>
+              </tr>
+            </thead>
+            <tbody id="usersTbody">
+              <tr><td class="empty" colspan="5">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Alerts table -->
+      <section class="panel" id="alertsPanel">
+        <div class="panel-header">
+          <h2>SOS Alerts</h2>
+          <div class="panel-controls">
+            <select id="alertStatusFilter">
+              <option value="">All statuses</option>
+              <option value="active">Active (live)</option>
+              <option value="resolved">Resolved</option>
+            </select>
+            <div class="pagination" id="alertsPagination"></div>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Location</th>
+                <th>Status</th>
+                <th>Triggered</th>
+                <th>Resolved</th>
+              </tr>
+            </thead>
+            <tbody id="alertsTbody">
+              <tr><td class="empty" colspan="5">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+<script>
+  // ── Configuration ───────────────────────────────────────────────
+  // Adjust these two values if your setup differs:
+  //   API_BASE  — leave "" if this page is served by the same FastAPI
+  //               app as the API (e.g. mounted at /admin-dashboard).
+  //               Set to e.g. "https://your-api.onrender.com" if hosted
+  //               separately.
+  //   LOGIN_PATH — path of your Chat 1 login endpoint. Update this if
+  //               routers/auth.py uses a different prefix.
+  const CONFIG = {
+    API_BASE: "",
+    LOGIN_PATH: "/auth/login",
+    PAGE_SIZE: 10,
+    REFRESH_INTERVAL_MS: 30000,
+  };
+
+  const state = {
+    token: null,
+    adminName: "",
+    usersPage: 1,
+    alertsPage: 1,
+    alertsStatus: "",
+    refreshTimer: null,
+  };
+
+  // ── DOM refs ────────────────────────────────────────────────────
+  const loginView = document.getElementById("loginView");
+  const loginForm = document.getElementById("loginForm");
+  const loginEmail = document.getElementById("loginEmail");
+  const loginPassword = document.getElementById("loginPassword");
+  const loginError = document.getElementById("loginError");
+
+  const dashboardView = document.getElementById("dashboardView");
+  const logoutBtn = document.getElementById("logoutBtn");
+  const adminNameEl = document.getElementById("adminName");
+  const lastUpdatedEl = document.getElementById("lastUpdated");
+
+  const statTotalUsers = document.getElementById("statTotalUsers");
+  const statTotalAlerts = document.getElementById("statTotalAlerts");
+  const statActive = document.getElementById("statActive");
+  const statResolved = document.getElementById("statResolved");
+  const activeCard = document.getElementById("activeCard");
+
+  const usersTbody = document.getElementById("usersTbody");
+  const usersPagination = document.getElementById("usersPagination");
+
+  const alertsTbody = document.getElementById("alertsTbody");
+  const alertsPagination = document.getElementById("alertsPagination");
+  const alertStatusFilter = document.getElementById("alertStatusFilter");
+
+  // ── Auth ────────────────────────────────────────────────────────
+  loginForm.addEventListener("submit", handleLogin);
+  logoutBtn.addEventListener("click", logout);
+  alertStatusFilter.addEventListener("change", () => {
+    state.alertsStatus = alertStatusFilter.value;
+    state.alertsPage = 1;
+    loadAlerts();
+  });
+
+  async function handleLogin(e) {
+    e.preventDefault();
+    loginError.hidden = true;
+
+    const email = loginEmail.value.trim();
+    const password = loginPassword.value;
+
+    try {
+      const res = await fetch(CONFIG.API_BASE + CONFIG.LOGIN_PATH, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!res.ok) {
+        throw new Error(
+          res.status === 401 ? "Invalid email or password." : "Sign-in failed."
+        );
+      }
+
+      const data = await res.json();
+      state.token = data.access_token;
+      state.adminName = data.full_name || "";
+
+      await enterDashboard();
+    } catch (err) {
+      showLoginError(err.message || "Sign-in failed. Please try again.");
+    }
+  }
+
+  async function enterDashboard() {
+    // Confirm this account has admin access before showing the dashboard.
+    try {
+      await loadStats();
+    } catch (err) {
+      if (err.code === 403) {
+        showLoginError("This account doesn't have admin access.");
+      } else {
+        showLoginError("Couldn't reach the API. Check your connection and try again.");
+      }
+      state.token = null;
+      return;
+    }
+
+    loginView.hidden = true;
+    dashboardView.hidden = false;
+    adminNameEl.textContent = state.adminName ? `Signed in as ${state.adminName}` : "";
+
+    await Promise.all([loadUsers(), loadAlerts()]);
+    startAutoRefresh();
+  }
+
+  function showLoginError(message) {
+    loginError.textContent = message;
+    loginError.hidden = false;
+  }
+
+  function logout() {
+    clearInterval(state.refreshTimer);
+    state.token = null;
+    state.usersPage = 1;
+    state.alertsPage = 1;
+    state.alertsStatus = "";
+    alertStatusFilter.value = "";
+
+    dashboardView.hidden = true;
+    loginView.hidden = false;
+    loginPassword.value = "";
+  }
+
+  // ── API helper ──────────────────────────────────────────────────
+  async function apiFetch(path) {
+    const res = await fetch(CONFIG.API_BASE + path, {
+      headers: { Authorization: `Bearer ${state.token}` },
+    });
+
+    if (res.status === 401) {
+      logout();
+      const err = new Error("Session expired. Please sign in again.");
+      err.code = 401;
+      throw err;
+    }
+    if (res.status === 403) {
+      const err = new Error("Admin access required.");
+      err.code = 403;
+      throw err;
+    }
+    if (!res.ok) {
+      const err = new Error(`Request failed (${res.status}).`);
+      err.code = res.status;
+      throw err;
+    }
+    return res.json();
+  }
+
+  // ── Data loading ────────────────────────────────────────────────
+  async function loadStats() {
+    const stats = await apiFetch("/admin/stats");
+    statTotalUsers.textContent = stats.total_users;
+    statTotalAlerts.textContent = stats.total_alerts;
+    statActive.textContent = stats.active_emergencies;
+    statResolved.textContent = stats.resolved_emergencies;
+    activeCard.classList.toggle("is-live", stats.active_emergencies > 0);
+    setLastUpdated();
+  }
+
+  async function loadUsers() {
+    try {
+      const data = await apiFetch(
+        `/admin/users?page=${state.usersPage}&page_size=${CONFIG.PAGE_SIZE}`
+      );
+      renderUsers(data);
+      renderPagination(usersPagination, data, (page) => {
+        state.usersPage = page;
+        loadUsers();
+        document.getElementById("usersPanel").scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    } catch (err) {
+      if (err.code !== 401) {
+        usersTbody.innerHTML = `<tr><td class="empty" colspan="5">Couldn't load users.</td></tr>`;
+      }
+    }
+  }
+
+  async function loadAlerts() {
+    try {
+      let path = `/admin/alerts?page=${state.alertsPage}&page_size=${CONFIG.PAGE_SIZE}`;
+      if (state.alertsStatus) path += `&status=${state.alertsStatus}`;
+
+      const data = await apiFetch(path);
+      renderAlerts(data);
+      renderPagination(alertsPagination, data, (page) => {
+        state.alertsPage = page;
+        loadAlerts();
+        document.getElementById("alertsPanel").scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    } catch (err) {
+      if (err.code !== 401) {
+        alertsTbody.innerHTML = `<tr><td class="empty" colspan="5">Couldn't load alerts.</td></tr>`;
+      }
+    }
+  }
+
+  // ── Rendering ───────────────────────────────────────────────────
+  function renderUsers(data) {
+    usersTbody.innerHTML = "";
+    if (data.users.length === 0) {
+      usersTbody.innerHTML = `<tr><td class="empty" colspan="5">No users yet.</td></tr>`;
+      return;
+    }
+    for (const u of data.users) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${escapeHtml(u.full_name || "—")}</td>
+        <td>${escapeHtml(u.email || "—")}</td>
+        <td>${escapeHtml(u.phone || "—")}</td>
+        <td>${formatDate(u.created_at)}</td>
+        <td>${u.is_admin ? '<span class="badge badge-admin">Admin</span>' : "—"}</td>
+      `;
+      usersTbody.appendChild(tr);
+    }
+  }
+
+  function renderAlerts(data) {
+    alertsTbody.innerHTML = "";
+    if (data.alerts.length === 0) {
+      alertsTbody.innerHTML = `<tr><td class="empty" colspan="5">No alerts found.</td></tr>`;
+      return;
+    }
+    for (const a of data.alerts) {
+      const tr = document.createElement("tr");
+      const who = a.user_name || a.user_email || a.uid;
+      const badge =
+        a.status === "active"
+          ? '<span class="badge badge-active"><span class="pulse-dot pulse-dot--sm"></span>Live</span>'
+          : '<span class="badge badge-resolved">Resolved</span>';
+
+      tr.innerHTML = `
+        <td>${escapeHtml(who)}</td>
+        <td>${formatLocation(a)}</td>
+        <td>${badge}</td>
+        <td>${formatDate(a.triggered_at)}</td>
+        <td>${a.resolved_at ? formatDate(a.resolved_at) : "—"}</td>
+      `;
+      alertsTbody.appendChild(tr);
+    }
+  }
+
+  function renderPagination(container, data, onChange) {
+    const totalPages = Math.max(1, Math.ceil(data.total / data.page_size));
+    container.innerHTML = "";
+
+    const prev = document.createElement("button");
+    prev.type = "button";
+    prev.textContent = "‹ Prev";
+    prev.disabled = data.page <= 1;
+    prev.addEventListener("click", () => onChange(data.page - 1));
+
+    const label = document.createElement("span");
+    label.className = "page-label";
+    label.textContent = `Page ${data.page} of ${totalPages}`;
+
+    const next = document.createElement("button");
+    next.type = "button";
+    next.textContent = "Next ›";
+    next.disabled = data.page >= totalPages;
+    next.addEventListener("click", () => onChange(data.page + 1));
+
+    container.append(prev, label, next);
+  }
+
+  // ── Formatting helpers ─────────────────────────────────────────
+  function formatLocation(a) {
+    if (a.address) return escapeHtml(a.address);
+    if (a.latitude != null && a.longitude != null) {
+      const lat = a.latitude.toFixed(4);
+      const lng = a.longitude.toFixed(4);
+      return `<a href="https://www.google.com/maps?q=${lat},${lng}" target="_blank" rel="noopener">${lat}, ${lng}</a>`;
+    }
+    return "—";
+  }
+
+  function formatDate(iso) {
+    if (!iso) return "—";
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return escapeHtml(String(iso));
+    return d.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement("div");
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  function setLastUpdated() {
+    lastUpdatedEl.textContent = `Updated ${new Date().toLocaleTimeString()}`;
+  }
+
+  function startAutoRefresh() {
+    clearInterval(state.refreshTimer);
+    state.refreshTimer = setInterval(async () => {
+      try {
+        await loadStats();
+        await loadAlerts();
+      } catch (err) {
+        // 401 already handled (logout); ignore other transient errors here.
+      }
+    }, CONFIG.REFRESH_INTERVAL_MS);
+  }
+</script>
+</body>
+</html>

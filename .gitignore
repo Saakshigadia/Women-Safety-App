@@ -1,0 +1,51 @@
+# ─── SECRETS — NEVER commit these ────────────────────────────────────────────
+serviceAccountKey.json
+.env
+.env.local
+*.env
+lib/firebase_options.dart
+android/app/google-services.json
+
+# ─── Python ───────────────────────────────────────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ─── Python virtual environment ───────────────────────────────────────────────
+.venv/
+venv/
+env/
+
+# ─── Flutter / Dart ───────────────────────────────────────────────────────────
+# (Flutter already has .gitignore files in android/, ios/, linux/, windows/)
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+*.g.dart
+build/
+
+# ─── Android ──────────────────────────────────────────────────────────────────
+android/.gradle/
+android/local.properties
+android/key.properties
+*.jks
+android/app/google-services.json
+
+# ─── iOS ──────────────────────────────────────────────────────────────────────
+ios/Pods/
+ios/.symlinks/
+
+# ─── IDE ──────────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.iml
+*.swp
+
+# ─── OS ───────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+lib/firebase_options.dart

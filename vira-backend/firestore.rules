@@ -1,0 +1,24 @@
+// firestore.rules  —  add these rules to your existing Firebase project
+// Covers the sos_alerts collection added in Chat 3.
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Users ─────────────────────────────────────────────────────────────────
+    match /users/{userId} {
+      allow read, write: if false;  // all access via FastAPI (server-side)
+    }
+
+    // ── Trusted contacts ──────────────────────────────────────────────────────
+    match /users/{userId}/contacts/{contactId} {
+      allow read, write: if false;
+    }
+
+    // ── SOS Alerts ────────────────────────────────────────────────────────────
+    match /sos_alerts/{alertId} {
+      // No direct client access — FastAPI service account handles all reads/writes.
+      allow read, write: if false;
+    }
+  }
+}

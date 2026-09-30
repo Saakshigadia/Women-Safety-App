@@ -1,0 +1,520 @@
+{
+  "info": {
+    "name": "VIRA Women Safety API",
+    "_postman_id": "vira-women-safety-2024",
+    "description": "Complete API collection for VIRA Women Safety App — Auth, Profile, Contacts, SOS, Location, Admin",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8000", "type": "string" },
+    { "key": "token",   "value": "",                      "type": "string" },
+    { "key": "adminToken", "value": "",                   "type": "string" },
+    { "key": "contactId",  "value": "",                   "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "🔐 Auth",
+      "item": [
+        {
+          "name": "Register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has uid', () => pm.expect(pm.response.json()).to.have.property('uid'));",
+                  "pm.test('Response time < 2000ms', () => pm.expect(pm.response.responseTime).to.be.below(2000));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/register", "host": ["{{baseUrl}}"], "path": ["register"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test User\",\n  \"email\": \"testuser@vira.app\",\n  \"phone\": \"+919876543210\",\n  \"password\": \"Test@1234\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Has access_token', () => pm.expect(json).to.have.property('access_token'));",
+                  "pm.collectionVariables.set('token', json.access_token);",
+                  "console.log('Token saved:', json.access_token.substring(0,20) + '...');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/login", "host": ["{{baseUrl}}"], "path": ["login"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"testuser@vira.app\",\n  \"password\": \"Test@1234\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Me",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has email', () => pm.expect(pm.response.json()).to.have.property('email'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/me", "host": ["{{baseUrl}}"], "path": ["me"] }
+          }
+        },
+        {
+          "name": "Login — Wrong Password (expect 401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/login", "host": ["{{baseUrl}}"], "path": ["login"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"testuser@vira.app\",\n  \"password\": \"WrongPassword\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Me — No Token (expect 401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/me", "host": ["{{baseUrl}}"], "path": ["me"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "👤 Profile",
+      "item": [
+        {
+          "name": "Get Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has name', () => pm.expect(pm.response.json()).to.have.property('name'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/profile", "host": ["{{baseUrl}}"], "path": ["profile"] }
+          }
+        },
+        {
+          "name": "Update Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Name updated', () => pm.expect(pm.response.json().name).to.eql('Updated Name'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/profile", "host": ["{{baseUrl}}"], "path": ["profile"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Name\",\n  \"phone\": \"+919876543210\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📞 Contacts",
+      "item": [
+        {
+          "name": "Add Contact",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Has id', () => pm.expect(json).to.have.property('id'));",
+                  "pm.collectionVariables.set('contactId', json.id);",
+                  "console.log('Contact ID saved:', json.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/contacts", "host": ["{{baseUrl}}"], "path": ["contacts"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Emergency Contact\",\n  \"phone\": \"+919000000001\",\n  \"relation\": \"Sister\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Contacts",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Is array', () => pm.expect(pm.response.json()).to.be.an('array'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/contacts", "host": ["{{baseUrl}}"], "path": ["contacts"] }
+          }
+        },
+        {
+          "name": "Delete Contact",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/contacts/{{contactId}}", "host": ["{{baseUrl}}"], "path": ["contacts", "{{contactId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🆘 SOS",
+      "item": [
+        {
+          "name": "Trigger SOS",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('SOS triggered', () => pm.expect(pm.response.json().status).to.eql('triggered'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/sos/trigger", "host": ["{{baseUrl}}"], "path": ["sos", "trigger"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"latitude\": 22.5726,\n  \"longitude\": 88.3639,\n  \"message\": \"Need help!\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Cancel SOS",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('SOS cancelled', () => pm.expect(pm.response.json().status).to.eql('cancelled'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/sos/cancel", "host": ["{{baseUrl}}"], "path": ["sos", "cancel"] }
+          }
+        },
+        {
+          "name": "SOS History",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Is array', () => pm.expect(pm.response.json()).to.be.an('array'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/sos/history", "host": ["{{baseUrl}}"], "path": ["sos", "history"] }
+          }
+        },
+        {
+          "name": "Update Location",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/location", "host": ["{{baseUrl}}"], "path": ["location"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"latitude\": 22.5726,\n  \"longitude\": 88.3639\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🛡️ Admin",
+      "item": [
+        {
+          "name": "Admin Login (set adminToken)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('adminToken', json.access_token);",
+                  "console.log('Admin token saved.');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/login", "host": ["{{baseUrl}}"], "path": ["login"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@vira.app\",\n  \"password\": \"Admin@1234\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Admin Stats",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Has total_users', () => pm.expect(json).to.have.property('total_users'));",
+                  "pm.test('Has total_alerts', () => pm.expect(json).to.have.property('total_alerts'));",
+                  "pm.test('Has active_emergencies', () => pm.expect(json).to.have.property('active_emergencies'));",
+                  "pm.test('Has resolved_emergencies', () => pm.expect(json).to.have.property('resolved_emergencies'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": { "raw": "{{baseUrl}}/admin/stats", "host": ["{{baseUrl}}"], "path": ["admin", "stats"] }
+          }
+        },
+        {
+          "name": "Admin — All Users",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has users array', () => pm.expect(pm.response.json().users).to.be.an('array'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/admin/users?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "users"],
+              "query": [
+                { "key": "page",  "value": "1" },
+                { "key": "limit", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Admin — All Alerts",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has alerts array', () => pm.expect(pm.response.json().alerts).to.be.an('array'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/admin/alerts?page=1&limit=10&status=all",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "alerts"],
+              "query": [
+                { "key": "page",   "value": "1" },
+                { "key": "limit",  "value": "10" },
+                { "key": "status", "value": "all" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Admin — Active Alerts Only",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const alerts = pm.response.json().alerts;",
+                  "pm.test('All alerts are active', () => alerts.forEach(a => pm.expect(a.status).to.eql('triggered')));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/admin/alerts?status=triggered",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "alerts"],
+              "query": [{ "key": "status", "value": "triggered" }]
+            }
+          }
+        },
+        {
+          "name": "Admin — Non-Admin Blocked (expect 403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 403 for non-admin', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/admin/stats", "host": ["{{baseUrl}}"], "path": ["admin", "stats"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "⚙️ System",
+      "item": [
+        {
+          "name": "Health Check",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Status is healthy', () => pm.expect(pm.response.json().status).to.eql('healthy'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/health", "host": ["{{baseUrl}}"], "path": ["health"] }
+          }
+        }
+      ]
+    }
+  ]
+}
