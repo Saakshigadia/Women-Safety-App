@@ -276,15 +276,6 @@ Deployed on **Render** (Singapore) — auto-deploys on every `git push` to `main
 
 ---
 
-## 👨‍💻 Author
-
-**Kashif Ahmed**
-- 🐙 GitHub: [@Kashif-14](https://github.com/Kashif-14)
-- 💼 LinkedIn: *www.linkedin.com/in/kashif-ahmed-1b1814294*
-- 📧 Email: *kashifahmed.ka03@gmail.com*
-
----
-
 ## 📄 License
 
 This project is licensed under the MIT License.
